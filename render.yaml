@@ -1,0 +1,67 @@
+# render.yaml — Render Blueprint
+# Declarative infrastructure-as-code for the Habit Tracker backend.
+#
+# Deploy: connect this repo in the Render dashboard and it will auto-detect
+# this file. All environment values marked `sync: false` must be set manually
+# in the Render dashboard (they contain secrets).
+#
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: habit-tracker-api
+    runtime: node
+    region: oregon   # choose closest to your user base
+    plan: starter    # upgrade to Standard ($25/mo) for always-on + autoscaling
+
+    # ── Build ───────────────────────────────────────────────────────────────
+    # Install from monorepo root so workspace symlinks are resolved correctly.
+    buildCommand: npm ci --workspace=@habit-tracker/api --workspace=@habit-tracker/shared --include-workspace-root
+    startCommand: node apps/api/src/server.js
+
+    # ── Health check ─────────────────────────────────────────────────────────
+    # Render marks the deploy failed if this path returns non-2xx.
+    # Our /api/health handler (added in app.js) returns { status: "ok" }.
+    healthCheckPath: /api/health
+
+    # ── Auto-deploy ──────────────────────────────────────────────────────────
+    autoDeploy: true   # redeploy on every push to the branch below
+    branch: main
+
+    # ── Environment variables ─────────────────────────────────────────────────
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: API_PORT
+        value: "4000"
+
+      # Render injects PORT automatically; we honour it so the process binds
+      # to the correct port on the platform. Our env schema uses API_PORT,
+      # so we sync them here.
+      - key: API_PORT
+        fromService:
+          type: web
+          name: habit-tracker-api
+          envVarKey: PORT
+
+      # ── Secrets (set in Render dashboard — never commit values) ───────────
+      - key: MONGO_URI
+        sync: false   # MongoDB Atlas SRV connection string
+
+      - key: JWT_SECRET
+        sync: false   # openssl rand -hex 32
+
+      - key: JWT_REFRESH_SECRET
+        sync: false   # openssl rand -hex 32
+
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: "15m"
+
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: "7d"
+
+      # Set this to your Vercel deployment URL after first deploy:
+      # e.g. https://habit-tracker.vercel.app
+      - key: CORS_ORIGIN
+        sync: false

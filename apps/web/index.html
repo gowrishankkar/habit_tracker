@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- PWA meta ─────────────────────────────────────────────────────────── -->
+    <meta name="theme-color" content="#3b82f6" />
+    <meta name="description" content="Track your daily habits, build streaks, and level up your life." />
+
+    <!-- iOS PWA support -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Habits" />
+
+    <!-- Manifest & icons -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+    <!-- Open Graph (share preview) -->
+    <meta property="og:title" content="Habit Tracker" />
+    <meta property="og:description" content="Track your daily habits and build streaks" />
+    <meta property="og:type" content="website" />
+
+    <title>Habit Tracker</title>
+  </head>
+  <body class="bg-slate-950 text-slate-100 antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
