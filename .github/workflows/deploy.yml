@@ -1,0 +1,92 @@
+name: Deploy
+
+on:
+  # Only deploy when CI passes on the main branch
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+
+jobs:
+  # ── Deploy backend to Render ─────────────────────────────────────────────────
+  # Render auto-deploys via the render.yaml Blueprint when you push to main.
+  # This job explicitly triggers a deploy via the Render API so the pipeline
+  # is visible in GitHub (instead of happening silently in the background).
+  deploy-api:
+    name: Deploy API → Render
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Trigger Render deploy
+        # RENDER_DEPLOY_HOOK_URL is set in repo secrets:
+        #   Render → Service → Settings → Deploy Hooks → Create Hook
+        run: |
+          curl --silent --fail -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          echo "Render deploy triggered"
+
+      - name: Wait for Render health check
+        run: |
+          echo "Waiting 90s for Render to build and start..."
+          sleep 90
+          STATUS=$(curl --silent --fail -o /dev/null -w "%{http_code}" \
+            https://habit-tracker-api.onrender.com/api/health || echo "000")
+          echo "Health check status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ Health check failed"
+            exit 1
+          fi
+          echo "✅ API is healthy"
+
+  # ── Deploy frontend to Vercel ─────────────────────────────────────────────────
+  # Vercel also auto-deploys from GitHub, but having an explicit job lets us
+  # run the deploy only after the backend is healthy.
+  deploy-web:
+    name: Deploy Web → Vercel
+    runs-on: ubuntu-latest
+    needs: deploy-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Install dependencies
+        run: npm ci --workspace=@habit-tracker/web --workspace=@habit-tracker/shared --include-workspace-root
+
+      - name: Deploy to Vercel (production)
+        # VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID set in repo secrets.
+        # Get them from: vercel link (in apps/web), then .vercel/project.json
+        run: |
+          vercel pull --yes --environment=production \
+            --token=${{ secrets.VERCEL_TOKEN }}
+          vercel build --prod \
+            --token=${{ secrets.VERCEL_TOKEN }}
+          vercel deploy --prebuilt --prod \
+            --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: apps/web
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+  # ── Post-deploy smoke test ─────────────────────────────────────────────────
+  smoke-test:
+    name: Smoke Test
+    runs-on: ubuntu-latest
+    needs: [deploy-api, deploy-web]
+    steps:
+      - name: API health check
+        run: |
+          curl --silent --fail https://habit-tracker-api.onrender.com/api/health
+
+      - name: Frontend reachable
+        run: |
+          STATUS=$(curl --silent -o /dev/null -w "%{http_code}" \
+            https://habit-tracker.vercel.app)
+          echo "Frontend HTTP status: $STATUS"
+          [ "$STATUS" = "200" ]

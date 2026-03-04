@@ -21,11 +21,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Input } from "../components/ui/Input";
-import { Button } from "../components/ui/Button";
-import { Alert } from "../components/ui/Alert";
-import { useAuth } from "../app/useAuth";
-import type { RegisterInput } from "../lib/types";
+import { Input } from "../../components/ui/Input";
+import { Button } from "../../components/ui/Button";
+import { Alert } from "../../components/ui/Alert";
+import { useAuth } from "../../app/useAuth";
+import type { RegisterInput } from "../../lib/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Validation schema

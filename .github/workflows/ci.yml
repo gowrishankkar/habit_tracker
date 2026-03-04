@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+# Cancel any in-progress run for the same branch/PR to save CI minutes
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Lint + Format check ─────────────────────────────────────────────────────
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier check
+        run: npm run format:check
+
+  # ── Streak engine unit tests (node:test, zero deps) ─────────────────────────
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install API dependencies
+        run: npm ci --workspace=@habit-tracker/api --workspace=@habit-tracker/shared --include-workspace-root
+
+      - name: Run streak engine tests
+        run: npm run test:unit --workspace=@habit-tracker/api
+
+  # ── API integration tests (vitest + MongoMemoryServer) ──────────────────────
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install API dependencies
+        run: npm ci --workspace=@habit-tracker/api --workspace=@habit-tracker/shared --include-workspace-root
+
+      - name: Run integration tests
+        run: npm run test:integration --workspace=@habit-tracker/api
+        env:
+          NODE_ENV: test
+          # Dummy secrets — real values never leave production environment.
+          # MongoMemoryServer overrides MONGO_URI at runtime.
+          MONGO_URI: mongodb://localhost:27017/test
+          JWT_SECRET: ci-test-jwt-secret-at-least-16chars
+          JWT_REFRESH_SECRET: ci-test-refresh-secret-minimum-16chars
+
+  # ── Frontend build check ─────────────────────────────────────────────────────
+  build-web:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install web dependencies
+        run: npm ci --workspace=@habit-tracker/web --workspace=@habit-tracker/shared --include-workspace-root
+
+      - name: Vite build
+        run: npm run build --workspace=@habit-tracker/web
+        env:
+          # Placeholder — real URL injected at Vercel deploy time
+          VITE_API_URL: https://habit-tracker-api.onrender.com/api
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist
+          retention-days: 7

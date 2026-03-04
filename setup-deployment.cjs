@@ -278,36 +278,13 @@ VITE_API_URL=https://habit-tracker-api.onrender.com/api
 console.log("\n✅  Deployment files created.\n");
 console.log("Next steps:");
 console.log("  See README.md → Deployment section for full walkthrough.");
-`);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Request ID middleware (for distributed tracing)
 // ─────────────────────────────────────────────────────────────────────────────
 
-write("apps/api/src/middleware/requestId.js", `/**
- * requestId middleware
- *
- * Attaches a unique request ID to every incoming HTTP request.
- * - Reads X-Request-ID from client headers if present (forwarded from Vercel/CDN)
- * - Otherwise generates a fresh ID using crypto.randomUUID()
- *
- * The ID is stored on req.id and echoed back in the X-Request-ID response
- * header so the client can correlate errors with server logs.
- *
- * Usage: attach BEFORE logger middleware so every log entry carries the ID.
- */
-
-import { randomUUID } from "crypto";
-
-export function requestId(req, res, next) {
-  const id = req.headers["x-request-id"] ?? randomUUID();
-  req.id = id;
-  res.setHeader("X-Request-ID", id);
-  next();
-}
-`);
+// Note: requestId.js is already created directly in apps/api/src/middleware/
 
 console.log("\n✅  All deployment files created.\n");
 console.log("Next steps:");
-console.log("  node setup-deployment.cjs");
-console.log("  Then see README.md for full deployment walkthrough.");
+console.log("  See README.md for the full deployment walkthrough.");

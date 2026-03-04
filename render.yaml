@@ -47,7 +47,7 @@ services:
 
       # ── Secrets (set in Render dashboard — never commit values) ───────────
       - key: MONGO_URI
-        sync: false   # MongoDB Atlas SRV connection string
+        value: "mongodb+srv://shankargkvsulur_db_user:LcjCfWpDifRAE1fd@cluster0.f4aczpq.mongodb.net/habit_tracker?retryWrites=true&w=majority"
 
       - key: JWT_SECRET
         sync: false   # openssl rand -hex 32
