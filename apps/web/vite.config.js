@@ -1,4 +1,4 @@
-import { defineConfig, splitVendorChunkPlugin } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
@@ -10,11 +10,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
-
-    // Automatically splits node_modules into a separate vendor chunk.
-    // This means app code changes don't bust the browser cache for React,
-    // Redux, Recharts etc. — those are large and rarely change.
-    splitVendorChunkPlugin(),
 
     VitePWA({
       // injectManifest: we own the SW file (src/sw.ts); VitePWA only injects
@@ -110,36 +105,8 @@ export default defineConfig(({ mode }) => ({
 
     rollupOptions: {
       output: {
-        // Manual chunk splitting strategy:
-        //
-        // react-vendor  — React + ReactDOM (~140kb gz) — changes rarely
-        // redux-vendor  — RTK + React-Redux — changes rarely
-        // charts-vendor — Recharts (~80kb gz) — changes rarely
-        // ui-vendor     — Radix / Headless UI / clsx etc.
-        //
-        // Splitting these out means a fix to the app JS (habitsSlice.js, etc.)
-        // does NOT bust the cache for the 300kb+ library bundle.
-        manualChunks(id) {
-          if (id.includes("node_modules")) {
-            if (id.includes("react-dom") || id.includes("react/")) {
-              return "react-vendor";
-            }
-            if (
-              id.includes("@reduxjs") ||
-              id.includes("react-redux") ||
-              id.includes("redux")
-            ) {
-              return "redux-vendor";
-            }
-            if (id.includes("recharts") || id.includes("d3-")) {
-              return "charts-vendor";
-            }
-          }
-        },
-
-        // Content-hash filenames for cache-busting.
-        // /assets/[name]-[hash].js is the default; made explicit here
-        // so nginx / CDN cache rules match predictably.
+        // Keep deterministic hashed filenames without forcing manual chunk groups.
+        // Let Rollup decide chunk graph to avoid circular vendor dependencies.
         chunkFileNames: "assets/[name]-[hash].js",
         entryFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash][extname]",
