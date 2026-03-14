@@ -5,6 +5,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import LoginPage from "./features/auth/LoginPage";
 import RegisterPage from "./features/auth/RegisterPage";
 import HabitList from "./features/habits/HabitList";
+import TodoPage from "./features/todos/TodoPage";
 import { Spinner } from "./components/ui/Spinner";
 import { OfflineBanner } from "./components/ui/OfflineBanner";
 import { ROUTES } from "./lib/constants";
@@ -40,6 +41,14 @@ export default function App() {
                 >
                   <AnalyticsDashboard />
                 </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.TODOS}
+            element={
+              <ProtectedRoute>
+                <TodoPage />
               </ProtectedRoute>
             }
           />

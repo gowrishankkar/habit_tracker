@@ -45,6 +45,19 @@ export function Header() {
               >
                 Analytics
               </NavLink>
+              <NavLink
+                to={ROUTES.TODOS}
+                className={({ isActive }) =>
+                  [
+                    "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-slate-800 text-slate-100"
+                      : "text-slate-500 hover:text-slate-300",
+                  ].join(" ")
+                }
+              >
+                Todos
+              </NavLink>
             </nav>
           )}
         </div>

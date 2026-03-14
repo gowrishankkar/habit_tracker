@@ -15,6 +15,7 @@ import authRoutes from "./modules/auth/auth.routes.js";
 import userRoutes from "./modules/users/user.routes.js";
 import habitRoutes from "./modules/habits/habit.routes.js";
 import analyticsRoutes from "./modules/analytics/analytics.routes.js";
+import todoRoutes from "./modules/todos/todo.routes.js";
 
 const app = express();
 
@@ -76,10 +77,12 @@ app.use(
 );
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
-const allowedOrigins = env.CORS_ORIGIN
-  .split(",")
-  .map((origin) => origin.trim().replace(/\/+$/, ""))
-  .filter(Boolean);
+const allowedOrigins = new Set(
+  env.CORS_ORIGIN
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/+$/, ""))
+    .filter(Boolean),
+);
 
 const corsOptions = {
   origin(origin, callback) {
@@ -87,7 +90,7 @@ const corsOptions = {
     if (!origin) return callback(null, true);
 
     const normalizedOrigin = origin.replace(/\/+$/, "");
-    if (allowedOrigins.includes(normalizedOrigin)) {
+    if (allowedOrigins.has(normalizedOrigin)) {
       return callback(null, true);
     }
 
@@ -156,6 +159,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/habits", habitRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/todos", todoRoutes);
 
 // ── 404 handler ──────────────────────────────────────────────────────────────
 // Must come after all routes so it only fires for unmatched paths.
