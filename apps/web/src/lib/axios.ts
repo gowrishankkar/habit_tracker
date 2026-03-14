@@ -23,8 +23,17 @@ import axios, {
 import { tokenStore } from "./tokenStore";
 import type { ApiSuccess, Tokens } from "./types";
 
-const BASE_URL = (import.meta as ImportMeta & { env: Record<string, string> })
-  .env.VITE_API_URL ?? "/api";
+function resolveApiBaseUrl(raw?: string): string {
+  const value = (raw ?? "").trim();
+  if (!value) return "/api";
+
+  const normalized = value.replace(/\/+$/, "");
+  return normalized.endsWith("/api") ? normalized : `${normalized}/api`;
+}
+
+const BASE_URL = resolveApiBaseUrl(
+  (import.meta as ImportMeta & { env: Record<string, string> }).env.VITE_API_URL,
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Instance
