@@ -7,6 +7,11 @@ import App from "./App";
 import "./index.css";
 import { registerSW } from "virtual:pwa-register";
 
+// Recover automatically when a deployed build invalidates previously cached chunks.
+window.addEventListener("vite:preloadError", () => {
+  window.location.reload();
+});
+
 const updateSW = registerSW({
   onNeedRefresh() {
     const accepted = window.confirm(
