@@ -22,7 +22,11 @@ const envSchema = z.object({
     .min(16, "JWT_REFRESH_SECRET must be at least 16 characters"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
 
-  CORS_ORIGIN: z.string().default("http://localhost:5173"),
+  // Comma-separated allowlist, e.g.
+  // "https://your-site.netlify.app,https://deploy-preview-42--your-site.netlify.app"
+  CORS_ORIGIN: z
+    .string()
+    .default("http://localhost:5173,http://127.0.0.1:5173"),
 });
 
 export const env = envSchema.parse(process.env);

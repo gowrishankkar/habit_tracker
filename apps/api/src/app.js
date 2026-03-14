@@ -76,7 +76,31 @@ app.use(
 );
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+const allowedOrigins = env.CORS_ORIGIN
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/+$/, ""))
+  .filter(Boolean);
+
+const corsOptions = {
+  origin(origin, callback) {
+    // Allow non-browser clients (curl/Postman) that do not send Origin.
+    if (!origin) return callback(null, true);
+
+    const normalizedOrigin = origin.replace(/\/+$/, "");
+    if (allowedOrigins.includes(normalizedOrigin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 // ── HTTP request logging ─────────────────────────────────────────────────────
 // Define a custom 'combined-with-id' format that prepends the request ID.
